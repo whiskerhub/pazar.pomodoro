@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Takip</title>
+<style>
+  :root {
+    --bg: #fff9ee;
+    --card: #ffffff;
+    --line: #f5e3b8;
+    --gold: #f0c94a;
+    --orange: #f5a623;
+    --orange-dark: #e08e00;
+    --orange-deep: #b45309;
+    --text: #4a3410;
+    --muted: #c99a2e;
+    --soft: #6b4f1d;
+    --ok: #f5a623;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: "Nunito", "Quicksand", -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Üst ---------- */
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 4px 4px 16px;
+    gap: 12px;
+  }
+  .top h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--orange-dark);
+    letter-spacing: -.4px;
+    line-height: 1.15;
+  }
+  .top .sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .btn-reset {
+    background: #fff3d6;
+    color: var(--orange-deep);
+    border: none;
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-reset:active { transform: scale(.96); }
+
+  /* ---------- Özet ---------- */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+  .stat {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 12px 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(224,142,0,.07), 0 1px 0 var(--line);
+  }
+  .stat .n {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--orange-dark);
+    line-height: 1;
+  }
+  .stat .l {
+    font-size: 9.5px;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-top: 5px;
+  }
+  .stat.done .n { color: var(--orange-deep); }
+
+  /* ---------- Kartlar ---------- */
+  .list { display: flex; flex-direction: column; gap: 12px; }
+
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 16px 18px 15px;
+    box-shadow: 0 2px 0 var(--line), 0 6px 18px rgba(224,142,0,.06);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 14px;
+    transition: opacity .25s, transform .25s;
+  }
+  .card.is-done {
+    opacity: .55;
+  }
+  .card.is-done .title { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: var(--gold); }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 9px;
+  }
+  .pill {
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    width: 26px; height: 26px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 26px;
+  }
+  .title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: var(--orange-deep);
+    letter-spacing: -.1px;
+  }
+
+  .desc {
+    font-size: 12.5px;
+    color: var(--soft);
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+  .desc p {
+    padding-left: 13px;
+    position: relative;
+    margin-bottom: 2px;
+  }
+  .desc p::before {
+    content: "";
+    position: absolute;
+    left: 1px; top: 8px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* ---------- Girişler ---------- */
+  .fill {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .fld {
+    background: var(--bg);
+    border-radius: 11px;
+    padding: 7px 10px 8px;
+  }
+  .fld .k {
+    font-size: 9px;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .fld input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--orange-dark);
+    outline: none;
+    padding: 0;
+    -moz-appearance: textfield;
+  }
+  .fld input::-webkit-outer-spin-button,
+  .fld input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .fld input::placeholder { color: #e8d4a0; font-weight: 700; }
+
+  /* ---------- Tamamla butonu ---------- */
+  .done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    align-self: center;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .done .circle {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2.5px solid var(--gold);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .done .circle::after {
+    content: "✓";
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    opacity: 0;
+    transform: scale(.5);
+    transition: all .2s;
+  }
+  .done:hover .circle { border-color: var(--orange); }
+  .done .lbl {
+    font-size: 8.5px;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .card.is-done .done .circle {
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    border-color: transparent;
+  }
+  .card.is-done .done .circle::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .card.is-done .done .lbl { color: var(--orange-deep); }
+
+  .foot {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>Pomodoro Takip</h1>
+    <div class="sub">40 dk çalış · 10 dk mola · 9 tur</div>
+  </div>
+  <button class="btn-reset" id="resetBtn">Sıfırla</button>
+</div>
+
+<div class="summary">
+  <div class="stat"><div class="n" id="sSolved">0</div><div class="l">Çözülen</div></div>
+  <div class="stat"><div class="n" id="sCorrect">0</div><div class="l">Doğru</div></div>
+  <div class="stat"><div class="n" id="sWrong">0</div><div class="l">Yanlış</div></div>
+  <div class="stat done"><div class="n" id="sDone">0/9</div><div class="l">Pomodoro</div></div>
+</div>
+
+<div class="list" id="list"></div>
+
+<div class="foot">Veriler bu cihazda otomatik kaydedilir · hedef 369 soru</div>
+
+<script>
+  const STORAGE_KEY = "pomodoro-tracker-v1";
+
+  const POMODOROS = [
+    { id: 1, title: "KKT Fen",
+      desc: ["KKT Fen'deki 40 soruyu çöz.", "Erken bitirirsen Günay Zoom Türkçe'ye başla."] },
+    { id: 2, title: "Günay Zoom + MEBİ Matematik",
+      desc: ["Günay Zoom Türkçe'deki kalan 23 soruyu bitir.", "Ardından MEBİ Matematik'e başla."] },
+    { id: 3, title: "MEBİ Matematik",
+      desc: ["MEBİ Matematik'teki 25 soruya devam et.", "Bitirirsen Dil Bilgisi'ne geç."] },
+    { id: 4, title: "Dil Bilgisi + 345 Fen",
+      desc: ["Dil Bilgisi'ndeki 47 soruyu tamamla.", "Vakit kalırsa 345 Fen'e başla."] },
+    { id: 5, title: "More and More İngilizce",
+      desc: ["3. ünitenin tamamı: 70 soru.", "Bu Pomodoro tamamen İngilizceye ayrılacak."] },
+    { id: 6, title: "345 Fen",
+      desc: ["345 Yayınları Fen'deki 84 soruya odaklan.", "Bu tur boyunca yalnızca 345 Fen çöz."] },
+    { id: 7, title: "345 Fen + Paragraf",
+      desc: ["345 Fen kesinlikle bu Pomodoro'da tamamlanacak.", "Artan zamanda Sinan Kuzucu Paragraf'a başla."] },
+    { id: 8, title: "Sinan Kuzucu Paragraf",
+      desc: ["Toplam 60 soruluk paragraf ödevini tamamla.", "Bu Pomodoro sonunda paragraf kesinlikle bitmiş olacak."] },
+    { id: 9, title: "Sinan Kuzucu Fen Denemesi + Kelime",
+      desc: ["Sinan Kuzucu Fen'deki 20 soruluk denemeyi tek oturumda çöz.",
+             "Deneme için 30 dakika süre tut.",
+             "Son 10 dakikada kelime listesini anlamlarıyla oku."] },
+  ];
+
+  // ---- Veri ----
+  let state = load();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    // başlangıç
+    const s = {};
+    POMODOROS.forEach(p => s[p.id] = { solved: "", correct: "", wrong: "", done: false });
+    return s;
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  // ---- Render ----
+  const listEl = document.getElementById("list");
+
+  function render() {
+    listEl.innerHTML = "";
+    POMODOROS.forEach(p => {
+      const d = state[p.id];
+      const card = document.createElement("div");
+      card.className = "card" + (d.done ? " is-done" : "");
+      card.innerHTML = `
+        <div>
+          <div class="head">
+            <div class="pill">${p.id}</div>
+            <div class="title">${p.title}</div>
+          </div>
+          <div class="desc">${p.desc.map(t => `<p>${t}</p>`).join("")}</div>
+          <div class="fill">
+            <div class="fld">
+              <div class="k">Soru</div>
+              <input type="number" inputmode="numeric" min="0" data-id="${p.id}" data-field="solved" value="${d.solved}" placeholder="—">
+            </div>
+            <div class="fld">
+              <div class="k">Doğru</div>
+              <input type="number" inputmode="numeric" min="0" data-id="${p.id}" data-field="correct" value="${d.correct}" placeholder="—">
+            </div>
+            <div class="fld">
+              <div class="k">Yanlış</div>
+              <input type="number" inputmode="numeric" min="0" data-id="${p.id}" data-field="wrong" value="${d.wrong}" placeholder="—">
+            </div>
+          </div>
+        </div>
+        <button class="done" data-id="${p.id}" title="Tamamla">
+          <div class="circle"></div>
+          <div class="lbl">${d.done ? "Bitti" : "Bitti"}</div>
+        </button>
+      `;
+      listEl.appendChild(card);
+    });
+    updateSummary();
+  }
+
+  function updateSummary() {
+    let solved = 0, correct = 0, wrong = 0, done = 0;
+    POMODOROS.forEach(p => {
+      const d = state[p.id];
+      solved += Number(d.solved) || 0;
+      correct += Number(d.correct) || 0;
+      wrong += Number(d.wrong) || 0;
+      if (d.done) done++;
+    });
+    document.getElementById("sSolved").textContent = solved;
+    document.getElementById("sCorrect").textContent = correct;
+    document.getElementById("sWrong").textContent = wrong;
+    document.getElementById("sDone").textContent = done + "/9";
+  }
+
+  // ---- Olaylar ----
+  listEl.addEventListener("input", (e) => {
+    const t = e.target;
+    if (t.tagName !== "INPUT") return;
+    const id = Number(t.dataset.id);
+    const field = t.dataset.field;
+    state[id][field] = t.value;
+    save();
+    updateSummary();
+  });
+
+  listEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".done");
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    state[id].done = !state[id].done;
+    save();
+    render();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    if (!confirm("Tüm veriler silinsin mi? Bu işlem geri alınamaz.")) return;
+    const s = {};
+    POMODOROS.forEach(p => s[p.id] = { solved: "", correct: "", wrong: "", done: false });
+    state = s;
+    save();
+    render();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
